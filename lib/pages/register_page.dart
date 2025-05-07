@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/api_service.dart';
 import 'login_page.dart';
+import 'manager_dashboard.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -18,7 +19,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final _dobController = TextEditingController();
   final _otpController = TextEditingController();
   bool _isOtpSent = false;
-  String? _userId;
+  String? _adminId;
   final ApiService _apiService = ApiService();
 
   void _selectDate(BuildContext context) async {
@@ -48,7 +49,7 @@ class _RegisterPageState extends State<RegisterPage> {
         if (response['status'] == 'PENDING') {
           setState(() {
             _isOtpSent = true;
-            _userId = response['userId'];
+            _adminId = response['adminId'];
           });
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('OTP sent to your email!')),
@@ -67,19 +68,30 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   void _handleOtpVerification() async {
-    if (_otpController.text.isNotEmpty && _userId != null) {
+    if (_otpController.text.isNotEmpty && _adminId != null) {
       try {
-        final response = await _apiService.verifyOTP(_userId!, _otpController.text);
+        final response = await _apiService.verifyOTP(_adminId!, _otpController.text);
 
         if (response['status'] == 'SUCCESS') {
-          await _apiService.saveToken(response['token']);
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const LoginPage()),
-          );
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Registration successful! Please log in.')),
-          );
+          if (_adminId != null) {
+            await _apiService.saveSessionInfo(_adminId!.toString());
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Verification failed: missing adminId.')),
+            );
+            return;
+          }
+          if (mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ManagerDashboard(adminId: _adminId!),
+              ),
+            );
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Registration successful! Welcome to your dashboard.')),
+            );
+          }
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(response['message'])),
@@ -94,9 +106,9 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   void _resendOtp() async {
-    if (_userId != null) {
+    if (_adminId != null) {
       try {
-        final response = await _apiService.resendOTP(_userId!, _emailController.text);
+        final response = await _apiService.resendOTP(_adminId!, _emailController.text);
         if (response['status'] == 'PENDING') {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('OTP resent to your email!')),
@@ -117,7 +129,7 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Register')),
+      appBar: AppBar(title: const Text('Register Admin')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -192,7 +204,10 @@ class _RegisterPageState extends State<RegisterPage> {
                   child: const Text('Register'),
                 ),
                 TextButton(
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginPage())),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const LoginPage()),
+                  ),
                   child: const Text('Already have an account? Login'),
                 ),
               ] else ...[

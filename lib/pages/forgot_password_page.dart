@@ -14,31 +14,33 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final _otpController = TextEditingController();
   final _newPasswordController = TextEditingController();
   bool _isOtpSent = false;
-  String? _userId;
+  String? _adminId; // Changed to adminId
   final ApiService _apiService = ApiService();
 
   void _requestOtp() async {
     if (_formKey.currentState!.validate()) {
       try {
-        final response = await _apiService.requestPasswordReset(_emailController.text);
+        final response = await _apiService.requestPasswordReset(
+          _emailController.text,
+        );
 
         if (response['status'] == 'PENDING') {
           setState(() {
             _isOtpSent = true;
-            _userId = response['userId'];
+            _adminId = response['adminId']; // Changed to adminId
           });
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('OTP sent to your email!')),
           );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(response['message'])),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(response['message'])));
         }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
   }
@@ -47,25 +49,27 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     if (_formKey.currentState!.validate()) {
       try {
         final response = await _apiService.resetPassword(
-          _userId!,
-          _otpController.text,
-          _newPasswordController.text,
+          email: _emailController.text,
+          otp: _otpController.text,
+          newPassword: _newPasswordController.text,
         );
 
         if (response['status'] == 'SUCCESS') {
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Password reset successful! Please log in.')),
+            const SnackBar(
+              content: Text('Password reset successful! Please log in.'),
+            ),
           );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(response['message'])),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(response['message'])));
         }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
   }
@@ -89,8 +93,11 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     border: OutlineInputBorder(),
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty) return 'Please enter your email';
-                    if (!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(value)) {
+                    if (value == null || value.isEmpty)
+                      return 'Please enter your email';
+                    if (!RegExp(
+                      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+                    ).hasMatch(value)) {
                       return 'Invalid email format';
                     }
                     return null;
@@ -110,7 +117,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   ),
                   keyboardType: TextInputType.number,
                   validator: (value) {
-                    if (value == null || value.isEmpty) return 'Please enter the OTP';
+                    if (value == null || value.isEmpty)
+                      return 'Please enter the OTP';
                     return null;
                   },
                 ),
@@ -123,8 +131,10 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   ),
                   obscureText: true,
                   validator: (value) {
-                    if (value == null || value.isEmpty) return 'Please enter a new password';
-                    if (value.length < 8) return 'Password must be at least 8 characters';
+                    if (value == null || value.isEmpty)
+                      return 'Please enter a new password';
+                    if (value.length < 8)
+                      return 'Password must be at least 8 characters';
                     return null;
                   },
                 ),

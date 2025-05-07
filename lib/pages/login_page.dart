@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import 'forgot_password_page.dart';
-import 'manager_dashboard.dart';
 import 'register_page.dart';
+import 'manager_dashboard.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -17,21 +17,21 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
   final _otpController = TextEditingController();
   bool _isOtpSent = false;
-  String? _userId;
+  String? _adminId;
   final ApiService _apiService = ApiService();
 
   void _handleSignIn() async {
     if (_formKey.currentState!.validate()) {
       try {
-        final response = await _apiService.signIn(
-          _emailController.text,
-          _passwordController.text,
+        final response = await _apiService.login(
+          email: _emailController.text,
+          password: _passwordController.text,
         );
 
         if (response['status'] == 'PENDING') {
           setState(() {
             _isOtpSent = true;
-            _userId = response['userId'];
+            _adminId = response['adminId'];
           });
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('OTP sent to your email!')),
@@ -50,20 +50,25 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _handleOtpVerification() async {
-    if (_otpController.text.isNotEmpty && _userId != null) {
+    if (_otpController.text.isNotEmpty && _adminId != null) {
       try {
-        final response = await _apiService.verifyOTP(_userId!, _otpController.text);
+        final response = await _apiService.verifyOTP(_adminId!, _otpController.text);
 
         if (response['status'] == 'SUCCESS') {
-          if (response['role'] == 'manager') {
-            await _apiService.saveToken(response['token']);
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => ManagerDashboard(userId: _userId!)),
-            );
+          if (_adminId != null) {
+            await _apiService.saveSessionInfo(_adminId!.toString());
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Access restricted to managers only!')),
+              const SnackBar(content: Text('Verification failed: missing adminId.')),
+            );
+            return;
+          }
+          if (mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ManagerDashboard(adminId: _adminId!),
+              ),
             );
           }
         } else {
@@ -80,9 +85,9 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _resendOtp() async {
-    if (_userId != null) {
+    if (_adminId != null) {
       try {
-        final response = await _apiService.resendOTP(_userId!, _emailController.text);
+        final response = await _apiService.resendOTP(_adminId!, _emailController.text);
         if (response['status'] == 'PENDING') {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('OTP resent to your email!')),
@@ -104,7 +109,7 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Manager Login'),
+        title: const Text('Admin Login'),
         backgroundColor: Theme.of(context).colorScheme.primary,
       ),
       body: Padding(
@@ -148,12 +153,18 @@ class _LoginPageState extends State<LoginPage> {
                   child: const Text('Sign In'),
                 ),
                 TextButton(
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ForgotPasswordPage())),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const ForgotPasswordPage()),
+                  ),
                   child: const Text('Forgot Password?'),
                 ),
                 TextButton(
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const RegisterPage())),
-                  child: const Text('Don’t have an account? Register'),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const RegisterPage()),
+                  ),
+                  child: const Text('Register as Admin'),
                 ),
               ] else ...[
                 TextFormField(
