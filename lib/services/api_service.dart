@@ -10,22 +10,36 @@ class ApiService {
   final http.Client _client = http.Client();
 
   // Save Session Info
-  Future<void> saveSessionInfo(String? adminId) async {
-    if (adminId == null) return;
-    await _secureStorage.write(key: 'admin_id', value: adminId.toString());
+  Future<void> saveSessionInfo(String? adminId, String? token) async {
+    if (adminId != null) await _secureStorage.write(key: 'admin_id', value: adminId);
+    if (token != null) await _secureStorage.write(key: 'jwt_token', value: token);
   }
 
   // Get Session Info
   Future<Map<String, String?>> getSessionInfo() async {
     final adminId = await _secureStorage.read(key: 'admin_id');
+    final token = await _secureStorage.read(key: 'jwt_token');
     return {
       'adminId': adminId,
+      'token': token,
     };
   }
 
   // Clear Session
   Future<void> clearSession() async {
     await _secureStorage.delete(key: 'admin_id');
+    await _secureStorage.delete(key: 'jwt_token');
+  }
+
+  Future<Map<String, String>> getAuthHeaders() async {
+    final token = await _secureStorage.read(key: 'jwt_token');
+    print('[DEBUG] JWT token used: $token');
+    final headers = {
+      'Content-Type': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
+    print('[DEBUG] Headers sent: $headers');
+    return headers;
   }
 
   // Register Admin
@@ -91,7 +105,7 @@ class ApiService {
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data['status'] == 'SUCCESS') {
-        await saveSessionInfo(adminId);
+        await saveSessionInfo(adminId, data['token']);
       }
       return data;
     } else {
@@ -192,11 +206,11 @@ class ApiService {
   // Fetch Admins (if needed)
   Future<List<Admin>> getAdmins() async {
     final url = Uri.parse('$baseUrl/admin/get-all-admins');
+    final headers = await getAuthHeaders();
     final response = await _client.get(
       url,
-      headers: {'Content-Type': 'application/json'},
+      headers: headers,
     );
-
     if (response.statusCode == 200) {
       final Map<String, dynamic> body = jsonDecode(response.body);
       if (body['status'] == 'SUCCESS' && body['data'] != null) {
@@ -219,9 +233,10 @@ class ApiService {
     required int stockQuantity,
   }) async {
     final url = Uri.parse('$baseUrl/product/');
+    final headers = await getAuthHeaders();
     final response = await _client.post(
       url,
-      headers: {'Content-Type': 'application/json'},
+      headers: headers,
       body: jsonEncode({
         'name': name,
         'description': description,
@@ -255,7 +270,8 @@ class ApiService {
   // Fetch all products
   Future<List<Map<String, dynamic>>> getProducts() async {
     final url = Uri.parse('$baseUrl/product/');
-    final response = await _client.get(url, headers: {'Content-Type': 'application/json'});
+    final headers = await getAuthHeaders();
+    final response = await _client.get(url, headers: headers);
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body);
       return data.cast<Map<String, dynamic>>();
@@ -267,7 +283,8 @@ class ApiService {
   // Delete a product
   Future<void> deleteProduct(String productId) async {
     final url = Uri.parse('$baseUrl/product/$productId');
-    final response = await _client.delete(url, headers: {'Content-Type': 'application/json'});
+    final headers = await getAuthHeaders();
+    final response = await _client.delete(url, headers: headers);
     if (response.statusCode != 200) {
       throw Exception('Failed to delete product: ${response.body}');
     }
@@ -283,9 +300,10 @@ class ApiService {
     required int stockQuantity,
   }) async {
     final url = Uri.parse('$baseUrl/product/$productId');
+    final headers = await getAuthHeaders();
     final response = await _client.patch(
       url,
-      headers: {'Content-Type': 'application/json'},
+      headers: headers,
       body: jsonEncode({
         'name': name,
         'description': description,
@@ -307,9 +325,10 @@ class ApiService {
     String? description,
   }) async {
     final url = Uri.parse('$baseUrl/category/');
+    final headers = await getAuthHeaders();
     final response = await _client.post(
       url,
-      headers: {'Content-Type': 'application/json'},
+      headers: headers,
       body: jsonEncode({'name': name, 'description': description}),
     );
     if (response.statusCode == 201) {
@@ -326,9 +345,10 @@ class ApiService {
     String? description,
   }) async {
     final url = Uri.parse('$baseUrl/category/$categoryId');
+    final headers = await getAuthHeaders();
     final response = await _client.patch(
       url,
-      headers: {'Content-Type': 'application/json'},
+      headers: headers,
       body: jsonEncode({'name': name, 'description': description}),
     );
     if (response.statusCode == 200) {
@@ -341,7 +361,8 @@ class ApiService {
   // Delete category
   Future<void> deleteCategory(String categoryId) async {
     final url = Uri.parse('$baseUrl/category/$categoryId');
-    final response = await _client.delete(url, headers: {'Content-Type': 'application/json'});
+    final headers = await getAuthHeaders();
+    final response = await _client.delete(url, headers: headers);
     if (response.statusCode != 200) {
       throw Exception('Failed to delete category: ${response.body}');
     }
@@ -350,5 +371,25 @@ class ApiService {
   // Dispose
   void dispose() {
     _client.close();
+  }
+
+  Future<String> askChatbot(String message) async {
+    final url = Uri.parse('$baseUrl/admin/chatbot');
+    final headers = await getAuthHeaders();
+    print('[DEBUG] Sending chatbot request to: $url');
+    print('[DEBUG] Request body: {"message": "$message"}');
+    final response = await _client.post(
+      url,
+      headers: headers,
+      body: jsonEncode({'message': message}),
+    );
+    print('[DEBUG] Chatbot response status: ${response.statusCode}');
+    print('[DEBUG] Chatbot response body: ${response.body}');
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['reply'] ?? 'No reply';
+    } else {
+      throw Exception('Failed to get chatbot reply: ${response.body}');
+    }
   }
 }

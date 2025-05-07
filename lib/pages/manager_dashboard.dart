@@ -4,6 +4,7 @@ import '../models/admin.dart';
 import '../services/api_service.dart';
 import 'product_dashboard_page.dart';
 import 'category_dashboard_page.dart';
+import 'chatbot_page.dart';
 
 class ManagerDashboard extends StatefulWidget {
   final String adminId;
@@ -118,6 +119,16 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
         appBar: AppBar(
           title: const Text('Manager Dashboard'),
           actions: [
+            IconButton(
+              icon: const Icon(Icons.chat),
+              tooltip: 'Chatbot',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => ChatbotPage()),
+                );
+              },
+            ),
             IconButton(
               icon: const Icon(Icons.logout),
               onPressed: _logout,

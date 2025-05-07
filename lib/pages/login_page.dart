@@ -56,7 +56,7 @@ class _LoginPageState extends State<LoginPage> {
 
         if (response['status'] == 'SUCCESS') {
           if (_adminId != null) {
-            await _apiService.saveSessionInfo(_adminId!.toString());
+            // Do not call saveSessionInfo here; it is handled in ApiService.verifyOTP with the correct JWT token
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Verification failed: missing adminId.')),
