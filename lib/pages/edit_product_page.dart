@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 import '../services/api_service.dart';
 
 class EditProductPage extends StatefulWidget {
@@ -17,10 +19,13 @@ class _EditProductPageState extends State<EditProductPage> {
   final _priceController = TextEditingController();
   final _stockController = TextEditingController();
   final ApiService _apiService = ApiService();
+  final ImagePicker _picker = ImagePicker();
 
   bool _isLoading = false;
   List<Map<String, dynamic>> _categories = [];
   String? _selectedCategoryId;
+  File? _selectedImage;
+  String? _currentImageUrl;
 
   @override
   void initState() {
@@ -31,7 +36,23 @@ class _EditProductPageState extends State<EditProductPage> {
     _priceController.text = widget.product['price']?.toString() ?? '';
     _stockController.text = widget.product['stockQuantity']?.toString() ?? '';
     _selectedCategoryId = widget.product['category']?['_id'] ?? widget.product['category'];
+    _currentImageUrl = widget.product['image'];
     _fetchCategories();
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      if (image != null) {
+        setState(() {
+          _selectedImage = File(image.path);
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to pick image: $e')),
+      );
+    }
   }
 
   Future<void> _fetchCategories() async {
@@ -64,6 +85,7 @@ class _EditProductPageState extends State<EditProductPage> {
           price: double.parse(_priceController.text),
           category: _selectedCategoryId!,
           stockQuantity: int.tryParse(_stockController.text) ?? 0,
+          image: _selectedImage,
         );
         if (response['name'] != null) {
           Navigator.pop(context, true);
@@ -95,6 +117,60 @@ class _EditProductPageState extends State<EditProductPage> {
           key: _formKey,
           child: ListView(
             children: [
+              // Image picker
+              GestureDetector(
+                onTap: _pickImage,
+                child: Container(
+                  height: 200,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: _selectedImage != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.file(
+                            _selectedImage!,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                          ),
+                        )
+                      : _currentImageUrl != null
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(
+                                _currentImageUrl!,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.error_outline, size: 50, color: Colors.grey[400]),
+                                      SizedBox(height: 8),
+                                      Text(
+                                        'Failed to load image',
+                                        style: TextStyle(color: Colors.grey[600]),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              ),
+                            )
+                          : Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.add_photo_alternate, size: 50, color: Colors.grey[400]),
+                                SizedBox(height: 8),
+                                Text(
+                                  'Tap to add product image',
+                                  style: TextStyle(color: Colors.grey[600]),
+                                ),
+                              ],
+                            ),
+                ),
+              ),
+              SizedBox(height: 16),
               TextFormField(
                 controller: _nameController,
                 decoration: InputDecoration(labelText: 'Product Name'),

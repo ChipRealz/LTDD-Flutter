@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import 'add_product_page.dart';
 import 'edit_product_page.dart';
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:image_picker/image_picker.dart';
 
 class ProductDashboardPage extends StatefulWidget {
   @override
@@ -15,6 +19,8 @@ class _ProductDashboardPageState extends State<ProductDashboardPage> with Single
   String? _error;
   late TabController _tabController;
   static const int LOW_STOCK_THRESHOLD = 15;
+  File? _selectedImage;
+  Uint8List? _webImage;
 
   @override
   void initState() {
@@ -99,6 +105,30 @@ class _ProductDashboardPageState extends State<ProductDashboardPage> with Single
             margin: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             color: isLowStock ? Colors.red.shade50 : null,
             child: ListTile(
+              leading: product['image'] != null
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: Image.network(
+                        product['image'],
+                        width: 56,
+                        height: 56,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            width: 56,
+                            height: 56,
+                            color: Colors.grey[200],
+                            child: Icon(Icons.image_not_supported, color: Colors.grey[400]),
+                          );
+                        },
+                      ),
+                    )
+                  : Container(
+                      width: 56,
+                      height: 56,
+                      color: Colors.grey[200],
+                      child: Icon(Icons.image_not_supported, color: Colors.grey[400]),
+                    ),
               title: Text(product['name'] ?? ''),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

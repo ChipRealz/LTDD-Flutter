@@ -224,27 +224,43 @@ class ApiService {
     }
   }
 
-  // Add Product (JSON only, no image)
+  // Add Product with image upload
   Future<Map<String, dynamic>> addProduct({
     required String name,
     required String description,
     required double price,
     required String category,
     required int stockQuantity,
+    File? image,
   }) async {
     final url = Uri.parse('$baseUrl/product/');
     final headers = await getAuthHeaders();
-    final response = await _client.post(
-      url,
-      headers: headers,
-      body: jsonEncode({
-        'name': name,
-        'description': description,
-        'price': price,
-        'category': category,
-        'stockQuantity': stockQuantity,
-      }),
-    );
+    
+    // Create multipart request
+    var request = http.MultipartRequest('POST', url);
+    
+    // Add headers
+    request.headers.addAll({
+      'Authorization': headers['Authorization'] ?? '',
+    });
+    
+    // Add text fields
+    request.fields['name'] = name;
+    request.fields['description'] = description;
+    request.fields['price'] = price.toString();
+    request.fields['category'] = category;
+    request.fields['stockQuantity'] = stockQuantity.toString();
+    
+    // Add image if provided
+    if (image != null) {
+      request.files.add(
+        await http.MultipartFile.fromPath('image', image.path),
+      );
+    }
+    
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+    
     if (response.statusCode == 201 || response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
@@ -290,7 +306,7 @@ class ApiService {
     }
   }
 
-  // Update a product
+  // Update Product with image upload
   Future<Map<String, dynamic>> updateProduct({
     required String productId,
     required String name,
@@ -298,20 +314,36 @@ class ApiService {
     required double price,
     required String category,
     required int stockQuantity,
+    File? image,
   }) async {
     final url = Uri.parse('$baseUrl/product/$productId');
     final headers = await getAuthHeaders();
-    final response = await _client.patch(
-      url,
-      headers: headers,
-      body: jsonEncode({
-        'name': name,
-        'description': description,
-        'price': price,
-        'category': category,
-        'stockQuantity': stockQuantity,
-      }),
-    );
+    
+    // Create multipart request
+    var request = http.MultipartRequest('PATCH', url);
+    
+    // Add headers
+    request.headers.addAll({
+      'Authorization': headers['Authorization'] ?? '',
+    });
+    
+    // Add text fields
+    request.fields['name'] = name;
+    request.fields['description'] = description;
+    request.fields['price'] = price.toString();
+    request.fields['category'] = category;
+    request.fields['stockQuantity'] = stockQuantity.toString();
+    
+    // Add image if provided
+    if (image != null) {
+      request.files.add(
+        await http.MultipartFile.fromPath('image', image.path),
+      );
+    }
+    
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+    
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
