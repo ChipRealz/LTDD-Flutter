@@ -93,8 +93,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     border: OutlineInputBorder(),
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty)
+                    if (value == null || value.isEmpty) {
                       return 'Please enter your email';
+                    }
                     if (!RegExp(
                       r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
                     ).hasMatch(value)) {
@@ -117,8 +118,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   ),
                   keyboardType: TextInputType.number,
                   validator: (value) {
-                    if (value == null || value.isEmpty)
+                    if (value == null || value.isEmpty) {
                       return 'Please enter the OTP';
+                    }
                     return null;
                   },
                 ),
@@ -131,10 +133,12 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   ),
                   obscureText: true,
                   validator: (value) {
-                    if (value == null || value.isEmpty)
+                    if (value == null || value.isEmpty) {
                       return 'Please enter a new password';
-                    if (value.length < 8)
+                    }
+                    if (value.length < 8) {
                       return 'Password must be at least 8 characters';
+                    }
                     return null;
                   },
                 ),

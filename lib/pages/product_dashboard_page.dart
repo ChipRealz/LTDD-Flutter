@@ -8,6 +8,8 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:image_picker/image_picker.dart';
 
 class ProductDashboardPage extends StatefulWidget {
+  const ProductDashboardPage({super.key});
+
   @override
   State<ProductDashboardPage> createState() => _ProductDashboardPageState();
 }
@@ -199,8 +201,8 @@ class _ProductDashboardPageState extends State<ProductDashboardPage> with Single
             _fetchProducts();
           }
         },
-        child: Icon(Icons.add),
         tooltip: 'Add Product',
+        child: Icon(Icons.add),
       ),
     );
   }

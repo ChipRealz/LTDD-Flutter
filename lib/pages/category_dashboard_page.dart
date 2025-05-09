@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 
 class CategoryDashboardPage extends StatefulWidget {
+  const CategoryDashboardPage({super.key});
+
   @override
   State<CategoryDashboardPage> createState() => _CategoryDashboardPageState();
 }
@@ -146,8 +148,8 @@ class _CategoryDashboardPageState extends State<CategoryDashboardPage> {
                 ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showCategoryDialog(),
-        child: Icon(Icons.add),
         tooltip: 'Add Category',
+        child: Icon(Icons.add),
       ),
     );
   }

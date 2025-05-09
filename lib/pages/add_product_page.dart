@@ -4,6 +4,8 @@ import 'package:image_picker/image_picker.dart';
 import '../services/api_service.dart';
 
 class AddProductPage extends StatefulWidget {
+  const AddProductPage({super.key});
+
   @override
   _AddProductPageState createState() => _AddProductPageState();
 }

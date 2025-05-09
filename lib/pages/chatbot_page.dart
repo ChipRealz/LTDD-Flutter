@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 
 class ChatbotPage extends StatefulWidget {
+  const ChatbotPage({super.key});
+
   @override
   State<ChatbotPage> createState() => _ChatbotPageState();
 }

@@ -204,7 +204,7 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
                                     final admin = admins[index];
                                     return ListTile(
                                       title: Text(admin.name),
-                                      subtitle: Text('${admin.email}'),
+                                      subtitle: Text(admin.email),
                                       leading: const Icon(Icons.person, color: Colors.deepPurple),
                                       trailing: admin.verified
                                           ? const Icon(Icons.verified, color: Colors.green)
