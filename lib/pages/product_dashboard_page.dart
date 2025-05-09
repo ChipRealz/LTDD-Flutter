@@ -1,3 +1,5 @@
+// ignore_for_file: unused_import
+
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import 'add_product_page.dart';
@@ -20,8 +22,11 @@ class _ProductDashboardPageState extends State<ProductDashboardPage> with Single
   bool _isLoading = false;
   String? _error;
   late TabController _tabController;
+  // ignore: constant_identifier_names
   static const int LOW_STOCK_THRESHOLD = 15;
+  // ignore: unused_field
   File? _selectedImage;
+  // ignore: unused_field
   Uint8List? _webImage;
 
   @override

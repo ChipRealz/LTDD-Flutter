@@ -14,6 +14,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final _otpController = TextEditingController();
   final _newPasswordController = TextEditingController();
   bool _isOtpSent = false;
+  // ignore: unused_field
   String? _adminId; // Changed to adminId
   final ApiService _apiService = ApiService();
 
