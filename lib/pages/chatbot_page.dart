@@ -39,7 +39,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Admin Chatbot')),
+      appBar: AppBar(title: Text('Demo Test Admin Chatbot')),
       body: Column(
         children: [
           Expanded(
