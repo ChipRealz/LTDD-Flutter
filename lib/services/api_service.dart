@@ -5,7 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/admin.dart';
 
 class ApiService {
-  final String baseUrl = 'http://192.168.1.13:5000';
+  final String baseUrl = 'http://10.0.2.2:5000';
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
   final http.Client _client = http.Client();
 
