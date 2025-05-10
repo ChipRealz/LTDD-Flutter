@@ -5,6 +5,7 @@ import '../services/api_service.dart';
 import 'product_dashboard_page.dart';
 import 'category_dashboard_page.dart';
 import 'chatbot_page.dart';
+import 'promotion_dashboard_page.dart';
 
 class ManagerDashboard extends StatefulWidget {
   final String adminId;
@@ -114,7 +115,7 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 4,
+      length: 5,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Manager Dashboard'),
@@ -141,6 +142,7 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
               Tab(text: 'Admins'),
               Tab(text: 'Products'),
               Tab(text: 'Categories'),
+              Tab(text: 'Promotions'),
             ],
           ),
         ),
@@ -226,6 +228,8 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
             ProductDashboardPage(),
             // Categories Tab
             CategoryDashboardPage(),
+            // Promotions Tab
+            PromotionDashboardPage(),
           ],
         ),
       ),

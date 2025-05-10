@@ -424,4 +424,57 @@ class ApiService {
       throw Exception('Failed to get chatbot reply: ${response.body}');
     }
   }
+
+  // Get all promotions (admin)
+  Future<List<Map<String, dynamic>>> getPromotions() async {
+    final url = Uri.parse('$baseUrl/promotion/');
+    final headers = await getAuthHeaders();
+    final response = await _client.get(url, headers: headers);
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.cast<Map<String, dynamic>>();
+    } else {
+      throw Exception('Failed to fetch promotions: ${response.body}');
+    }
+  }
+
+  // Create a new promotion (admin)
+  Future<Map<String, dynamic>> createPromotion({
+    required String code,
+    required double discount,
+    required String type,
+    double? minOrderValue,
+    required DateTime expiresAt,
+    String? userId,
+  }) async {
+    final url = Uri.parse('$baseUrl/promotion/create');
+    final headers = await getAuthHeaders();
+    final response = await _client.post(
+      url,
+      headers: headers,
+      body: jsonEncode({
+        'code': code,
+        'discount': discount,
+        'type': type,
+        'minOrderValue': minOrderValue,
+        'expiresAt': expiresAt.toIso8601String(),
+        'userId': userId,
+      }),
+    );
+    if (response.statusCode == 201) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to create promotion: ${response.body}');
+    }
+  }
+
+  // Delete a promotion (admin)
+  Future<void> deletePromotion(String promotionId) async {
+    final url = Uri.parse('$baseUrl/promotion/$promotionId');
+    final headers = await getAuthHeaders();
+    final response = await _client.delete(url, headers: headers);
+    if (response.statusCode != 200) {
+      throw Exception('Failed to delete promotion: ${response.body}');
+    }
+  }
 }
