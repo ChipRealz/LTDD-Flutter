@@ -477,4 +477,44 @@ class ApiService {
       throw Exception('Failed to delete promotion: ${response.body}');
     }
   }
+
+  // Get all orders (admin)
+  Future<Map<String, dynamic>> getAllOrders({int page = 1, int limit = 10, String? status, String sortBy = 'createdAt', String sortOrder = 'desc'}) async {
+    final url = Uri.parse('$baseUrl/order/admin/get-all-orders?page=$page&limit=$limit&sortBy=$sortBy&sortOrder=$sortOrder${status != null ? '&status=$status' : ''}');
+    final headers = await getAuthHeaders();
+    final response = await _client.get(url, headers: headers);
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to fetch orders: ${response.body}');
+    }
+  }
+
+  // Update order status (admin)
+  Future<Map<String, dynamic>> updateOrderStatus({required String orderId, required String status}) async {
+    final url = Uri.parse('$baseUrl/order/admin/order/$orderId');
+    final headers = await getAuthHeaders();
+    final response = await _client.put(
+      url,
+      headers: headers,
+      body: jsonEncode({'status': status}),
+    );
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to update order status: ${response.body}');
+    }
+  }
+
+  // Get order by ID (admin)
+  Future<Map<String, dynamic>> getOrderById(String orderId) async {
+    final url = Uri.parse('$baseUrl/order/$orderId');
+    final headers = await getAuthHeaders();
+    final response = await _client.get(url, headers: headers);
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to fetch order: ${response.body}');
+    }
+  }
 }
