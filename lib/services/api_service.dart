@@ -49,7 +49,7 @@ class ApiService {
     required String password,
     required String dateOfBirth,
   }) async {
-    final url = Uri.parse('$baseUrl/signup');
+    final url = Uri.parse('$baseUrl/admin/signup');
     final response = await _client.post(
       url,
       headers: {'Content-Type': 'application/json'},
