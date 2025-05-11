@@ -61,112 +61,116 @@ class _PromotionDashboardPageState extends State<PromotionDashboardPage> with Si
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Create Promotion'),
-        content: Form(
-          key: formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: codeController,
-                  decoration: InputDecoration(labelText: 'Promotion Code'),
-                  validator: (v) => v?.isEmpty ?? true ? 'Enter promotion code' : null,
-                ),
-                SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  value: selectedType,
-                  items: [
-                    DropdownMenuItem(value: 'percent', child: Text('Percentage')),
-                    DropdownMenuItem(value: 'fixed', child: Text('Fixed Amount')),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) => AlertDialog(
+            title: Text('Create Promotion'),
+            content: Form(
+              key: formKey,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: codeController,
+                      decoration: InputDecoration(labelText: 'Promotion Code'),
+                      validator: (v) => v?.isEmpty ?? true ? 'Enter promotion code' : null,
+                    ),
+                    SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      value: selectedType,
+                      items: [
+                        DropdownMenuItem(value: 'percent', child: Text('Percentage')),
+                        DropdownMenuItem(value: 'fixed', child: Text('Fixed Amount')),
+                      ],
+                      onChanged: (v) => setState(() => selectedType = v!),
+                      decoration: InputDecoration(labelText: 'Discount Type'),
+                    ),
+                    SizedBox(height: 12),
+                    TextFormField(
+                      controller: discountController,
+                      decoration: InputDecoration(
+                        labelText: selectedType == 'percent' ? 'Discount Percentage' : 'Discount Amount',
+                        hintText: selectedType == 'percent' ? 'Enter percentage (e.g., 10)' : 'Enter amount',
+                      ),
+                      keyboardType: TextInputType.number,
+                      validator: (v) {
+                        if (v?.isEmpty ?? true) return 'Enter discount value';
+                        final value = double.tryParse(v!);
+                        if (value == null) return 'Enter a valid number';
+                        if (selectedType == 'percent' && (value < 0 || value > 100)) {
+                          return 'Percentage must be between 0 and 100';
+                        }
+                        return null;
+                      },
+                    ),
+                    SizedBox(height: 12),
+                    TextFormField(
+                      controller: minOrderController,
+                      decoration: InputDecoration(
+                        labelText: 'Minimum Order Value',
+                        hintText: 'Enter minimum order value (optional)',
+                      ),
+                      keyboardType: TextInputType.number,
+                    ),
+                    SizedBox(height: 12),
+                    ListTile(
+                      title: Text('Expiry Date'),
+                      subtitle: Text(DateFormat('MMM dd, yyyy').format(expiryDate)),
+                      trailing: Icon(Icons.calendar_today),
+                      onTap: () async {
+                        final date = await showDatePicker(
+                          context: context,
+                          initialDate: expiryDate,
+                          firstDate: DateTime.now(),
+                          lastDate: DateTime.now().add(Duration(days: 365)),
+                        );
+                        if (date != null) {
+                          setState(() => expiryDate = date);
+                        }
+                      },
+                    ),
                   ],
-                  onChanged: (v) => setState(() => selectedType = v!),
-                  decoration: InputDecoration(labelText: 'Discount Type'),
                 ),
-                SizedBox(height: 12),
-                TextFormField(
-                  controller: discountController,
-                  decoration: InputDecoration(
-                    labelText: selectedType == 'percent' ? 'Discount Percentage' : 'Discount Amount',
-                    hintText: selectedType == 'percent' ? 'Enter percentage (e.g., 10)' : 'Enter amount',
-                  ),
-                  keyboardType: TextInputType.number,
-                  validator: (v) {
-                    if (v?.isEmpty ?? true) return 'Enter discount value';
-                    final value = double.tryParse(v!);
-                    if (value == null) return 'Enter a valid number';
-                    if (selectedType == 'percent' && (value < 0 || value > 100)) {
-                      return 'Percentage must be between 0 and 100';
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(height: 12),
-                TextFormField(
-                  controller: minOrderController,
-                  decoration: InputDecoration(
-                    labelText: 'Minimum Order Value',
-                    hintText: 'Enter minimum order value (optional)',
-                  ),
-                  keyboardType: TextInputType.number,
-                ),
-                SizedBox(height: 12),
-                ListTile(
-                  title: Text('Expiry Date'),
-                  subtitle: Text(DateFormat('MMM dd, yyyy').format(expiryDate)),
-                  trailing: Icon(Icons.calendar_today),
-                  onTap: () async {
-                    final date = await showDatePicker(
-                      context: context,
-                      initialDate: expiryDate,
-                      firstDate: DateTime.now(),
-                      lastDate: DateTime.now().add(Duration(days: 365)),
-                    );
-                    if (date != null) {
-                      setState(() => expiryDate = date);
-                    }
-                  },
-                ),
-              ],
+              ),
             ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  if (formKey.currentState?.validate() ?? false) {
+                    try {
+                      await _apiService.createPromotion(
+                        code: codeController.text,
+                        discount: double.parse(discountController.text),
+                        type: selectedType,
+                        minOrderValue: minOrderController.text.isNotEmpty
+                            ? double.parse(minOrderController.text)
+                            : null,
+                        expiresAt: expiryDate,
+                        userId: selectedUserId,
+                      );
+                      Navigator.pop(context);
+                      _fetchPromotions();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Promotion created successfully')),
+                      );
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Failed to create promotion: $e')),
+                      );
+                    }
+                  }
+                },
+                child: Text('Create'),
+              ),
+            ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (formKey.currentState?.validate() ?? false) {
-                try {
-                  await _apiService.createPromotion(
-                    code: codeController.text,
-                    discount: double.parse(discountController.text),
-                    type: selectedType,
-                    minOrderValue: minOrderController.text.isNotEmpty
-                        ? double.parse(minOrderController.text)
-                        : null,
-                    expiresAt: expiryDate,
-                    userId: selectedUserId,
-                  );
-                  Navigator.pop(context);
-                  _fetchPromotions();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Promotion created successfully')),
-                  );
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Failed to create promotion: $e')),
-                  );
-                }
-              }
-            },
-            child: Text('Create'),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
