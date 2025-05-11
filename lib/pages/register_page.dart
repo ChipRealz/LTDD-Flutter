@@ -1,31 +1,49 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../services/api_service.dart';
-import 'forgot_password_page.dart';
-import 'register_page.dart';
+import 'login_page.dart';
 import 'manager_dashboard.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+class RegisterPage extends StatefulWidget {
+  const RegisterPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<RegisterPage> createState() => _RegisterPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _dobController = TextEditingController();
   final _otpController = TextEditingController();
   bool _isOtpSent = false;
   String? _adminId;
   final ApiService _apiService = ApiService();
 
-  void _handleSignIn() async {
+  void _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null) {
+      setState(() {
+        _dobController.text = DateFormat('yyyy-MM-dd').format(picked);
+      });
+    }
+  }
+
+  void _handleRegister() async {
     if (_formKey.currentState!.validate()) {
       try {
-        final response = await _apiService.login(
+        final response = await _apiService.register(
+          name: _nameController.text,
           email: _emailController.text,
           password: _passwordController.text,
+          dateOfBirth: _dobController.text,
         );
 
         if (response['status'] == 'PENDING') {
@@ -70,6 +88,9 @@ class _LoginPageState extends State<LoginPage> {
                 builder: (context) => ManagerDashboard(adminId: _adminId!),
               ),
             );
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Registration successful! Welcome to your dashboard.')),
+            );
           }
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -108,10 +129,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Admin Login'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-      ),
+      appBar: AppBar(title: const Text('Register Admin')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -120,6 +138,19 @@ class _LoginPageState extends State<LoginPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (!_isOtpSent) ...[
+                TextFormField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Name',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) return 'Please enter your name';
+                    if (!RegExp(r'^[a-zA-Z ]*$').hasMatch(value)) return 'Invalid name format';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
                 TextFormField(
                   controller: _emailController,
                   decoration: const InputDecoration(
@@ -144,27 +175,40 @@ class _LoginPageState extends State<LoginPage> {
                   obscureText: true,
                   validator: (value) {
                     if (value == null || value.isEmpty) return 'Please enter your password';
+                    if (value.length < 8) return 'Password must be at least 8 characters';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _dobController,
+                  decoration: const InputDecoration(
+                    labelText: 'Date of Birth (YYYY-MM-DD)',
+                    border: OutlineInputBorder(),
+                  ),
+                  readOnly: true,
+                  onTap: () => _selectDate(context),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) return 'Please select your date of birth';
+                    try {
+                      DateTime.parse(value);
+                    } catch (e) {
+                      return 'Invalid date format';
+                    }
                     return null;
                   },
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton(
-                  onPressed: _handleSignIn,
-                  child: const Text('Sign In'),
+                  onPressed: _handleRegister,
+                  child: const Text('Register'),
                 ),
                 TextButton(
                   onPressed: () => Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const ForgotPasswordPage()),
+                    MaterialPageRoute(builder: (context) => const LoginPage()),
                   ),
-                  child: const Text('Forgot Password?'),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const RegisterPage()),
-                  ),
-                  child: const Text('Register as Admin'),
+                  child: const Text('Already have an account? Login'),
                 ),
               ] else ...[
                 TextFormField(
@@ -198,8 +242,10 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void dispose() {
+    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _dobController.dispose();
     _otpController.dispose();
     super.dispose();
   }
