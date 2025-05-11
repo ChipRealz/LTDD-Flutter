@@ -320,11 +320,11 @@ class ApiService {
     final headers = await getAuthHeaders();
     
     // Create multipart request
-    var request = http.MultipartRequest('PATCH', url);
+    var request = http.MultipartRequest('PUT', url);
     
     // Add headers
     request.headers.addAll({
-      'Authorization': headers['Authorization'] ?? '',
+      'Authorization': headers['Authorization'] ?? '',    
     });
     
     // Add text fields
