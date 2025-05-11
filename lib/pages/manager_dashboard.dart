@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../models/admin.dart';
 import '../services/api_service.dart';
+import '../services/user_service.dart';
 import 'product_dashboard_page.dart';
 import 'category_dashboard_page.dart';
 import 'chatbot_page.dart';
 import 'promotion_dashboard_page.dart';
 import 'order_dashboard_page.dart';
+import 'user_management_screen.dart';
 
 class ManagerDashboard extends StatefulWidget {
   final String adminId;
@@ -24,12 +26,37 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
   bool isLoadingAdmins = false;
   String? errorMessage;
   final ApiService _apiService = ApiService();
+  UserService? _userService;
+  bool _isLoadingUserService = true;
 
   @override
   void initState() {
     super.initState();
     _initSocket();
     _fetchAdmins();
+    _initUserService();
+  }
+
+  Future<void> _initUserService() async {
+    try {
+      final sessionInfo = await _apiService.getSessionInfo();
+      if (mounted) {
+        setState(() {
+          _userService = UserService(
+            baseUrl: _apiService.baseUrl,
+            token: sessionInfo['token'] ?? '',
+          );
+          _isLoadingUserService = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingUserService = false;
+          errorMessage = 'Failed to initialize user service: $e';
+        });
+      }
+    }
   }
 
   void _initSocket() {
@@ -139,40 +166,41 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
           ],
           bottom: const TabBar(
             tabs: [
-              Tab(text: 'Notifications'),
+              // Tab(text: 'Notifications'),
               Tab(text: 'Admins'),
               Tab(text: 'Products'),
               Tab(text: 'Categories'),
               Tab(text: 'Promotions'),
               Tab(text: 'Orders'),
+              Tab(text: 'Users'),
             ],
           ),
         ),
         body: TabBarView(
           children: [
             // Notifications Tab
-            Column(
-              children: [
-                const Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Text(
-                    'Notifications:',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                ),
-                Expanded(
-                  child: notifications.isEmpty
-                      ? const Center(child: Text('No notifications yet'))
-                      : ListView.builder(
-                          itemCount: notifications.length,
-                          itemBuilder: (context, index) => ListTile(
-                            title: Text(notifications[index]),
-                            leading: const Icon(Icons.notifications, color: Colors.deepPurple),
-                          ),
-                        ),
-                ),
-              ],
-            ),
+            // Column(
+            //   children: [
+            //     const Padding(
+            //       padding: EdgeInsets.all(16.0),
+            //       child: Text(
+            //         'Notifications:',
+            //         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            //       ),
+            //     ),
+            //     Expanded(
+            //       child: notifications.isEmpty
+            //           ? const Center(child: Text('No notifications yet'))
+            //           : ListView.builder(
+            //               itemCount: notifications.length,
+            //               itemBuilder: (context, index) => ListTile(
+            //                 title: Text(notifications[index]),
+            //                 leading: const Icon(Icons.notifications, color: Colors.deepPurple),
+            //               ),
+            //             ),
+            //     ),
+            //   ],
+            // ),
             // Admins Tab
             Column(
               children: [
@@ -234,6 +262,24 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
             PromotionDashboardPage(),
             // Orders Tab
             OrderDashboardPage(),
+            // Users Tab
+            _isLoadingUserService
+                ? const Center(child: CircularProgressIndicator())
+                : _userService != null
+                    ? UserManagementScreen(userService: _userService!)
+                    : Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(errorMessage ?? 'Failed to initialize user service'),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: _initUserService,
+                              child: const Text('Retry'),
+                            ),
+                          ],
+                        ),
+                      ),
           ],
         ),
       ),
